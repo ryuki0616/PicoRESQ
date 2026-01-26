@@ -1,0 +1,21 @@
+{
+  "name": "picoresq-kids-reception",
+  "version": "1.0.0",
+  "description": "PicoRESQ-Kids 受付システム - Electronフロントエンド",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "keywords": [
+    "nfc",
+    "reception",
+    "disaster",
+    "electron"
+  ],
+  "author": "PicoRESQ-Kids Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0"
+  }
+}

@@ -1,0 +1,785 @@
+@import url("https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@600;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap");
+
+:root {
+    color-scheme: light;
+    --ink: #0f172a;
+    --ink-soft: #475569;
+    --ink-faint: #7b8794;
+    --bg: #f2f5f8;
+    --bg-alt: #eaf0f7;
+    --panel: #ffffff;
+    --panel-soft: #f8fafc;
+    --line: #e2e8f0;
+    --accent: #0f766e;
+    --accent-strong: #14b8a6;
+    --accent-warm: #f97316;
+    --accent-calm: #38bdf8;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Zen Maru Gothic", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    background:
+        radial-gradient(900px 500px at 12% 8%, rgba(14, 165, 160, 0.15), transparent 65%),
+        radial-gradient(700px 360px at 90% 12%, rgba(56, 189, 248, 0.18), transparent 60%),
+        linear-gradient(180deg, #f8fafc 0%, #eef2f6 100%);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+    line-height: 1.7;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    width: 360px;
+    height: 360px;
+    border-radius: 999px;
+    background: rgba(249, 115, 22, 0.12);
+    top: -140px;
+    right: -60px;
+    z-index: -1;
+}
+
+.container {
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    max-width: 980px;
+    width: 100%;
+    padding: 52px 70px 64px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(226, 232, 240, 0.7);
+}
+
+.container::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(140deg, rgba(14, 165, 160, 0.07), transparent 45%);
+    pointer-events: none;
+}
+
+.screen {
+    display: none;
+    animation: fadeUp 0.45s ease;
+}
+
+.screen.active {
+    display: block;
+}
+
+@keyframes fadeUp {
+    0% {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+h1 {
+    color: var(--ink);
+    margin-bottom: 10px;
+    text-align: center;
+    font-size: clamp(24px, 3.2vw, 36px);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    font-family: "Kaisei Decol", "Hiragino Mincho ProN", serif;
+}
+
+.subtitle,
+.subtitle-compact {
+    text-align: center;
+    color: var(--ink-soft);
+    margin-bottom: 34px;
+    font-size: 0.95em;
+    font-weight: 500;
+}
+
+/* ======================================
+   コンパクトなカードステータス（右上配置）
+   ====================================== */
+.card-status-compact {
+    position: absolute;
+    top: 22px;
+    right: 26px;
+    text-align: right;
+    z-index: 10;
+}
+
+.card-status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-bottom: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid var(--line);
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #cbd5f5;
+    animation: pulse 2s infinite;
+}
+
+.card-status-indicator.detected .status-dot {
+    background: var(--success);
+    animation: none;
+}
+
+.card-status-indicator.error .status-dot {
+    background: var(--danger);
+    animation: none;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+#card-status-text {
+    color: var(--ink-soft);
+    font-size: 0.82em;
+    font-weight: 500;
+}
+
+.card-id-compact {
+    background: var(--ink);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    font-size: 0.75em;
+    color: #fff;
+    display: inline-block;
+    box-shadow: 0 6px 12px rgba(15, 23, 42, 0.2);
+    letter-spacing: 0.06em;
+}
+
+.card-id-compact:empty {
+    display: none;
+}
+
+/* ======================================
+   ホーム画面のメインコンテンツ
+   ====================================== */
+.home-main-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 70vh;
+    padding-top: 20px;
+}
+
+/* ======================================
+   コンパクトな進捗表示
+   ====================================== */
+.progress-display-compact {
+    width: 100%;
+    max-width: 720px;
+}
+
+.booth-progress-compact {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.booth-item-compact {
+    background: var(--panel);
+    padding: 16px 22px;
+    border-radius: var(--radius-md);
+    text-align: center;
+    border: 1px solid var(--line);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+    transition: all 0.2s ease;
+    min-width: 86px;
+}
+
+.booth-item-compact:hover {
+    transform: translateY(-3px);
+}
+
+.booth-item-compact.cleared {
+    background: linear-gradient(140deg, #ecfdf3 0%, #e6fffb 100%);
+    border-color: rgba(20, 184, 166, 0.4);
+}
+
+.booth-item-compact.cleared .booth-num,
+.booth-item-compact.cleared .booth-status {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.booth-num {
+    display: block;
+    font-size: 1.8em;
+    font-weight: 800;
+    color: #94a3b8;
+    line-height: 1.2;
+    margin-bottom: 6px;
+}
+
+.booth-status {
+    display: block;
+    color: #94a3b8;
+    font-size: 0.75em;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ======================================
+   クイズ開始セクション（コンパクト）
+   ====================================== */
+.start-quiz-section-compact {
+    text-align: center;
+    margin-top: 18px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--line);
+}
+
+.selected-booth-info-compact {
+    color: var(--ink);
+    font-size: 1em;
+    font-weight: 600;
+    margin-bottom: 14px;
+}
+
+.btn-large {
+    padding: 18px 52px;
+    font-size: 1.05em;
+}
+
+/* Booth List (Admin/Selection) */
+.booth-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 18px;
+    margin-bottom: 40px;
+}
+
+.booth-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 26px 24px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+}
+
+.booth-card::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.4), rgba(56, 189, 248, 0.4));
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.booth-card:hover {
+    transform: translateY(-4px);
+}
+
+.booth-card:hover::after {
+    opacity: 1;
+}
+
+.booth-card h2 {
+    color: var(--ink);
+    margin-bottom: 10px;
+    font-size: 1.15em;
+    font-weight: 700;
+    font-family: "Kaisei Decol", "Hiragino Mincho ProN", serif;
+}
+
+.booth-card p {
+    color: var(--ink-soft);
+    margin-bottom: 18px;
+    font-size: 0.95em;
+}
+
+.booth-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 0.78em;
+    background: #f1f5f9;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.booth-card.cleared .booth-status-badge {
+    background: rgba(20, 184, 166, 0.15);
+    color: var(--accent);
+    box-shadow: 0 2px 5px rgba(20, 184, 166, 0.2);
+}
+
+/* Quiz Screen */
+.quiz-header {
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 20px;
+}
+
+.quiz-title {
+    text-align: left;
+    color: var(--ink);
+    margin-bottom: 12px;
+    font-size: 1.4em;
+    background: none;
+    -webkit-text-fill-color: initial;
+    border-left: 6px solid var(--accent);
+    padding-left: 14px;
+}
+
+.quiz-question {
+    font-size: 1.15em;
+    color: var(--ink);
+    line-height: 1.8;
+    text-align: left;
+    margin-bottom: 24px;
+    padding: 30px;
+    background: var(--panel-soft);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--line);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+
+.quiz-options {
+    margin-bottom: 30px;
+}
+
+.quiz-option {
+    display: block;
+    width: 100%;
+    padding: 18px 24px;
+    margin-bottom: 12px;
+    background: #ffffff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    font-size: 1em;
+    color: var(--ink);
+    font-weight: 500;
+    position: relative;
+    padding-left: 56px;
+}
+
+.quiz-option::before {
+    content: "";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    border: 2px solid #cbd5e1;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.quiz-option:hover {
+    border-color: rgba(20, 184, 166, 0.5);
+    background: #f8fffe;
+}
+
+.quiz-option:hover::before {
+    border-color: var(--accent-strong);
+}
+
+.quiz-option.selected {
+    border-color: var(--accent-strong);
+    background: rgba(20, 184, 166, 0.08);
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.quiz-option.selected::before {
+    border-color: var(--accent-strong);
+    background: var(--accent-strong);
+    box-shadow: inset 0 0 0 3px #fff;
+}
+
+.quiz-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+}
+
+/* Result Screen */
+.result-content {
+    text-align: center;
+    margin-bottom: 32px;
+    padding: 36px;
+    background: var(--panel);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--line);
+}
+
+.result-icon {
+    font-size: 4.4em;
+    margin-bottom: 16px;
+    display: block;
+    text-shadow: 0 8px 16px rgba(15, 23, 42, 0.1);
+    animation: popIn 0.45s ease;
+}
+
+@keyframes popIn {
+    from { transform: scale(0.6); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.result-icon.correct {
+    color: var(--success);
+}
+
+.result-icon.incorrect {
+    color: var(--danger);
+}
+
+.result-message {
+    font-size: 1.6em;
+    color: var(--ink);
+    margin-bottom: 22px;
+    font-weight: 700;
+}
+
+.result-explanation {
+    background: var(--panel-soft);
+    padding: 24px;
+    border-radius: var(--radius-md);
+    color: var(--ink-soft);
+    line-height: 1.8;
+    margin-bottom: 24px;
+    text-align: left;
+    border: 1px solid var(--line);
+}
+
+/* Complete Screen */
+.complete-content {
+    text-align: center;
+}
+
+.certificate {
+    background: var(--panel);
+    color: var(--ink);
+    padding: 54px 40px;
+    border: 2px solid rgba(15, 118, 110, 0.25);
+    margin: 32px 0;
+    position: relative;
+    box-shadow: var(--shadow);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.certificate::before {
+    content: "";
+    position: absolute;
+    inset: 12px;
+    border: 1px dashed rgba(15, 118, 110, 0.4);
+    border-radius: var(--radius-md);
+}
+
+.certificate h2 {
+    color: var(--ink);
+    margin-bottom: 18px;
+    font-size: 2em;
+    font-family: "Kaisei Decol", "Hiragino Mincho ProN", serif;
+    border-bottom: 2px solid rgba(249, 115, 22, 0.6);
+    padding-bottom: 12px;
+    display: inline-block;
+    background: #ffffff;
+    padding-left: 18px;
+    padding-right: 18px;
+}
+
+.certificate p {
+    font-size: 1.05em;
+    margin-bottom: 12px;
+    background: #ffffff;
+    display: inline-block;
+    padding: 4px 12px;
+}
+
+.certificate-date {
+    margin-top: 36px;
+    font-size: 1em;
+    text-align: right;
+    color: var(--ink-faint);
+    font-family: "Kaisei Decol", "Hiragino Mincho ProN", serif;
+}
+
+/* Buttons */
+.btn-primary,
+.btn-secondary {
+    padding: 14px 38px;
+    border: none;
+    border-radius: 999px;
+    font-size: 0.98em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    color: white;
+    box-shadow: 0 12px 22px rgba(14, 165, 160, 0.25);
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 26px rgba(14, 165, 160, 0.3);
+}
+
+.btn-primary:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.btn-secondary {
+    background: #f1f5f9;
+    color: var(--ink);
+    border: 1px solid var(--line);
+}
+
+.btn-secondary:hover {
+    background: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+/* 管理者画面スタイル */
+.admin-switch-top-left {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    z-index: 10;
+}
+
+.btn-admin-small {
+    padding: 7px 16px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 0.82em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: white;
+    color: var(--ink-faint);
+    display: none;
+    font-weight: 600;
+}
+
+.btn-admin-small:hover {
+    color: var(--ink);
+    border-color: #94a3b8;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+}
+
+.admin-booth-selection {
+    margin-bottom: 40px;
+    padding: 34px;
+    background: #f8fafc;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--line);
+}
+
+.admin-booth-selection h2 {
+    text-align: center;
+    color: var(--ink);
+    margin-bottom: 26px;
+    font-size: 1.4em;
+    font-family: "Kaisei Decol", "Hiragino Mincho ProN", serif;
+}
+
+.admin-booth-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+}
+
+.admin-booth-btn {
+    background: white;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    padding: 24px 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+.admin-booth-btn:hover {
+    border-color: rgba(20, 184, 166, 0.5);
+    transform: translateY(-3px);
+}
+
+.admin-booth-btn.selected {
+    background: #0f172a;
+    border-color: #0f172a;
+    color: white;
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.35);
+}
+
+.admin-booth-btn.selected .booth-number-large {
+    color: var(--accent-strong);
+}
+
+.admin-booth-btn.selected .booth-label,
+.admin-booth-btn.selected .booth-description {
+    color: white;
+}
+
+.booth-number-large {
+    font-size: 2.6em;
+    font-weight: 800;
+    color: #cbd5f5;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.admin-booth-btn:hover .booth-number-large {
+    color: var(--accent-strong);
+}
+
+.booth-label {
+    font-size: 0.95em;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.booth-description {
+    font-size: 0.75em;
+    color: var(--ink-soft);
+}
+
+.admin-selected-booth {
+    background: #0f172a;
+    color: white;
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    margin-bottom: 34px;
+    text-align: center;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.3);
+}
+
+.admin-selected-booth h2 {
+    color: rgba(255, 255, 255, 0.75);
+    margin-bottom: 16px;
+    font-size: 1.1em;
+    font-family: "Kaisei Decol", "Hiragino Mincho ProN", serif;
+}
+
+.selected-booth-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 26px;
+}
+
+.selected-booth-number {
+    font-size: 3.4em;
+    font-weight: 800;
+    color: var(--accent-strong);
+    line-height: 1;
+}
+
+.selected-booth-label {
+    font-size: 1.6em;
+    color: white;
+    font-weight: 700;
+}
+
+.admin-actions {
+    text-align: center;
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 720px) {
+    .container {
+        padding: 36px 24px 44px;
+    }
+
+    .card-status-compact {
+        position: static;
+        margin-bottom: 18px;
+        text-align: center;
+    }
+
+    .card-status-indicator {
+        justify-content: center;
+    }
+
+    .booth-list {
+        grid-template-columns: 1fr;
+    }
+
+    .quiz-actions {
+        flex-direction: column-reverse;
+        gap: 12px;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}

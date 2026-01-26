@@ -1,0 +1,8 @@
+{"timestamp":"2026-01-26T02:36:12.077Z","idm":"044F372A021290","booth_id":1,"quiz_number":1,"selected_answer":0,"correct_answer":0,"correct":true,"correct_count":1}
+{"timestamp":"2026-01-26T02:36:18.561Z","idm":"044F372A021290","booth_id":1,"quiz_number":2,"selected_answer":0,"correct_answer":0,"correct":true,"correct_count":2}
+{"timestamp":"2026-01-26T02:36:23.765Z","idm":"044F372A021290","booth_id":1,"quiz_number":3,"selected_answer":1,"correct_answer":1,"correct":true,"correct_count":3}
+{"timestamp":"2026-01-26T02:38:01.393Z","idm":"044F372A021290","booth_id":3,"quiz_number":1,"selected_answer":2,"correct_answer":2,"correct":true,"correct_count":1}
+{"timestamp":"2026-01-26T02:38:10.060Z","idm":"044F372A021290","booth_id":3,"quiz_number":2,"selected_answer":0,"correct_answer":0,"correct":true,"correct_count":2}
+{"timestamp":"2026-01-26T02:38:17.292Z","idm":"044F372A021290","booth_id":3,"quiz_number":3,"selected_answer":0,"correct_answer":1,"correct":false,"correct_count":2}
+{"timestamp":"2026-01-26T02:38:20.611Z","idm":"044F372A021290","booth_id":3,"quiz_number":3,"selected_answer":1,"correct_answer":1,"correct":true,"correct_count":3}
+{"timestamp":"2026-01-26T02:38:25.332Z","idm":"044F372A021290","booth_id":3,"quiz_number":3,"selected_answer":1,"correct_answer":1,"correct":true,"correct_count":3}

@@ -1,0 +1,22 @@
+{
+  "name": "picoresq-kids-frontend",
+  "version": "1.0.0",
+  "description": "PicoRESQ-Kids クイズシステム - Electronフロントエンド",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "keywords": [
+    "nfc",
+    "quiz",
+    "disaster",
+    "education",
+    "electron"
+  ],
+  "author": "PicoRESQ-Kids Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0"
+  }
+}

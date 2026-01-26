@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pico-ResQ 避難所システム</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Pico-ResQ 避難所システム</h1>
+            <p class="header-sub">カードタッチで受付完了。誰でも迷わない、シンプルな運用フロー。</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="openTab('read')">📖 受付（読み取り）</button>
+            <button class="tab-btn" onclick="openTab('write')">📝 新規登録（書き込み）</button>
+            <button class="tab-btn danger" onclick="openTab('erase')">🗑️ データ削除</button>
+        </div>
+
+        <div id="read" class="tab-content active">
+            <div class="card-body center-content">
+                <div id="read-status">
+                    <h2>カードをタッチしてください</h2>
+                    <p>登録済みのカードをリーダーにかざしてください</p>
+                </div>
+                <div id="read-result" style="display:none;">
+                    <h2 class="success">✅ 受付完了</h2>
+                    <div id="resident-info"></div>
+                    <div id="detail-button-container" style="margin-top: 20px; display: none;">
+                        <button id="view-detail-btn" class="detail-btn" onclick="showDetailInfo()">📋 詳細情報を見る</button>
+                    </div>
+                    <p style="color: #888; font-size: 0.9em; margin-top: 15px;">カードを離すと受付状態に戻ります</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="write" class="tab-content">
+            <div class="card-body">
+                <p class="description">避難者情報をカードに登録します。<br>必要な情報を入力し、「カードに書き込む」ボタンを押してください。</p>
+                
+                <form id="register-form">
+                    <div class="section">
+                        <h3>1. 基本情報</h3>
+                        <div class="form-group">
+                            <label>氏名 <span class="required">必須</span></label>
+                            <input type="text" name="name" placeholder="例: 山田 太郎" maxlength="24" required>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3>2. アレルギー情報</h3>
+                        <div class="form-group">
+                            <label>アレルギー <span class="warning">重要</span></label>
+                            <input type="text" name="allergy" placeholder="例: そば、卵、ペニシリンなど（なければ空欄）" maxlength="100">
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3>3. 配慮事項</h3>
+                        <p class="sub-label">該当するものにチェックを入れてください</p>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" name="vul_eld"> 高齢者</label>
+                            <label><input type="checkbox" name="vul_inf"> 乳幼児</label>
+                            <label><input type="checkbox" name="vul_prg"> 妊産婦</label>
+                            <label><input type="checkbox" name="vul_dis"> 障がい</label>
+                            <label><input type="checkbox" name="vul_for"> 外国人</label>
+                        </div>
+                    </div>
+
+                    <div class="submit-area">
+                        <button type="button" class="submit-btn" onclick="startRegistration()">💳 カードに書き込む</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="erase" class="tab-content">
+            <div class="card-body center-content">
+                <div id="erase-status">
+                    <h2>⚠️ カードデータ削除</h2>
+                    <div class="warning-box">
+                        <p><strong>注意:</strong> この操作はカード内の全ての避難者情報を削除します。</p>
+                        <ul>
+                            <li>氏名、アレルギー情報、配慮項目</li>
+                            <li>クイズ進捗（クリア状況）</li>
+                        </ul>
+                        <p>削除したデータは復元できません。</p>
+                    </div>
+                    <p style="margin-top: 20px;">削除するカードをリーダーにかざしてください。</p>
+                    <button type="button" class="erase-btn" onclick="startErase()">🗑️ カードデータを削除する</button>
+                </div>
+                <div id="erase-result" style="display:none;">
+                    <div class="success-icon">✅</div>
+                    <h2>削除完了</h2>
+                    <p id="erase-message">カードのデータが正常に削除されました。</p>
+                    <button type="button" class="btn-secondary" onclick="resetErase()">別のカードを削除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay for scanning -->
+    <div id="scan-overlay" style="display:none;">
+        <div class="overlay-content">
+            <h2>カードをタッチしてください</h2>
+            <p>データを書き込んでいます...</p>
+            <div class="spinner"></div>
+            <button onclick="cancelScan()">キャンセル</button>
+        </div>
+    </div>
+
+    <!-- Detail Info Modal -->
+    <div id="detail-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>詳細情報</h2>
+                <button class="modal-close" onclick="closeDetailInfo()">&times;</button>
+            </div>
+            <div class="modal-body" id="detail-info-content">
+                <!-- 詳細情報がここに表示されます -->
+            </div>
+        </div>
+    </div>
+
+
+    <script src="renderer.js"></script>
+</body>
+</html>

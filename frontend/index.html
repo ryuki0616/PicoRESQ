@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFC防災ヒーロー育成ラリー</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 管理者画面 -->
+        <div id="admin-screen" class="screen">
+            <h1>管理者画面</h1>
+            <p class="subtitle">対象のステージ（ブース）を選択してください</p>
+            
+            <div class="admin-booth-selection">
+                <h2>ステージ選択</h2>
+                <div class="admin-booth-grid">
+                    <button class="admin-booth-btn" data-booth="1">
+                        <span class="booth-number-large">1</span>
+                        <span class="booth-label">ステージ 1</span>
+                        <span class="booth-description">地震時の行動</span>
+                    </button>
+                    <button class="admin-booth-btn" data-booth="2">
+                        <span class="booth-number-large">2</span>
+                        <span class="booth-label">ステージ 2</span>
+                        <span class="booth-description">避難所でのマナー</span>
+                    </button>
+                    <button class="admin-booth-btn" data-booth="3">
+                        <span class="booth-number-large">3</span>
+                        <span class="booth-label">ステージ 3</span>
+                        <span class="booth-description">非常持ち出し袋</span>
+                    </button>
+                    <button class="admin-booth-btn" data-booth="4">
+                        <span class="booth-number-large">4</span>
+                        <span class="booth-label">ステージ 4</span>
+                        <span class="booth-description">災害時の連絡方法</span>
+                    </button>
+                    <button class="admin-booth-btn" data-booth="5">
+                        <span class="booth-number-large">5</span>
+                        <span class="booth-label">ステージ 5</span>
+                        <span class="booth-description">防災グッズ</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="admin-selected-booth" id="admin-selected-booth" style="display: none;">
+                <h2>選択中のステージ</h2>
+                <div class="selected-booth-info">
+                    <span class="selected-booth-number" id="selected-booth-number">-</span>
+                    <span class="selected-booth-label" id="selected-booth-label">-</span>
+                </div>
+                <button id="clear-selection-btn" class="btn-secondary">選択を解除</button>
+            </div>
+
+            <div class="admin-actions">
+                <button id="admin-to-user-btn" class="btn-primary">ユーザー画面に切り替え</button>
+            </div>
+        </div>
+
+        <!-- ホーム画面 -->
+        <div id="home-screen" class="screen active">
+            <div class="admin-switch-top-left">
+                <button id="user-to-admin-btn" class="btn-admin-small">管理</button>
+            </div>
+            <!-- 右上のカードステータス -->
+            <div class="card-status-compact">
+                <div class="card-status-indicator" id="card-status-indicator">
+                    <span class="status-dot"></span>
+                    <span id="card-status-text">カードをかざしてください</span>
+                </div>
+                <div id="card-id" class="card-id-compact"></div>
+            </div>
+            
+            <div class="home-main-content">
+                <h1>NFC防災クイズラリー</h1>
+                <p class="subtitle-compact">カードをかざして、防災知識を確認しましょう</p>
+                
+                <div id="progress-display" class="progress-display-compact" style="display: none;">
+                    <div class="booth-progress-compact">
+                        <div class="booth-item-compact" data-booth="1">
+                            <span class="booth-num">1</span>
+                            <span class="booth-status">未完了</span>
+                        </div>
+                        <div class="booth-item-compact" data-booth="2">
+                            <span class="booth-num">2</span>
+                            <span class="booth-status">未完了</span>
+                        </div>
+                        <div class="booth-item-compact" data-booth="3">
+                            <span class="booth-num">3</span>
+                            <span class="booth-status">未完了</span>
+                        </div>
+                        <div class="booth-item-compact" data-booth="4">
+                            <span class="booth-num">4</span>
+                            <span class="booth-status">未完了</span>
+                        </div>
+                        <div class="booth-item-compact" data-booth="5">
+                            <span class="booth-num">5</span>
+                            <span class="booth-status">未完了</span>
+                        </div>
+                    </div>
+                    <div id="start-quiz-section" class="start-quiz-section-compact" style="display: none;">
+                        <p id="selected-booth-info" class="selected-booth-info-compact"></p>
+                        <button id="start-quiz-btn" class="btn-primary btn-large">問題に挑戦</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ブース選択画面 -->
+        <div id="booth-select-screen" class="screen">
+            <h1>ステージを選択</h1>
+            <div class="booth-list">
+                <button class="booth-card" data-booth="1">
+                    <h2>ステージ 1</h2>
+                    <p>地震時の行動</p>
+                    <span class="booth-status-badge" data-booth="1">未クリア</span>
+                </button>
+                <button class="booth-card" data-booth="2">
+                    <h2>ステージ 2</h2>
+                    <p>避難所でのマナー</p>
+                    <span class="booth-status-badge" data-booth="2">未クリア</span>
+                </button>
+                <button class="booth-card" data-booth="3">
+                    <h2>ステージ 3</h2>
+                    <p>非常持ち出し袋</p>
+                    <span class="booth-status-badge" data-booth="3">未クリア</span>
+                </button>
+                <button class="booth-card" data-booth="4">
+                    <h2>ステージ 4</h2>
+                    <p>災害時の連絡方法</p>
+                    <span class="booth-status-badge" data-booth="4">未クリア</span>
+                </button>
+                <button class="booth-card" data-booth="5">
+                    <h2>ステージ 5</h2>
+                    <p>防災グッズ</p>
+                    <span class="booth-status-badge" data-booth="5">未クリア</span>
+                </button>
+            </div>
+            <button id="back-to-home-btn" class="btn-secondary">ホームに戻る</button>
+        </div>
+
+        <!-- クイズ画面 -->
+        <div id="quiz-screen" class="screen">
+            <div class="quiz-header">
+                <h1 id="quiz-title">ステージ <span id="current-booth">1</span></h1>
+                <p id="quiz-question" class="quiz-question"></p>
+            </div>
+            <div class="quiz-options" id="quiz-options">
+                <!-- 選択肢はJavaScriptで動的に生成 -->
+            </div>
+            <div class="quiz-actions">
+                <button id="submit-answer-btn" class="btn-primary" disabled>回答する</button>
+                <button id="back-to-booth-select-btn" class="btn-secondary">一覧に戻る</button>
+            </div>
+        </div>
+
+        <!-- 結果画面 -->
+        <div id="result-screen" class="screen">
+            <div id="result-content">
+                <!-- 結果はJavaScriptで動的に生成 -->
+            </div>
+            <div class="result-actions">
+                <button id="next-quiz-btn" class="btn-primary" style="display: none;">次のステージへ</button>
+                <button id="back-to-booth-select-result-btn" class="btn-secondary">一覧に戻る</button>
+            </div>
+        </div>
+
+        <!-- 完了画面 -->
+        <div id="complete-screen" class="screen">
+            <div class="complete-content">
+                <h1>全ステージ クリア！</h1>
+                <div class="certificate">
+                    <h2>防災知識習得 認定証</h2>
+                    <p>あなたは5つのステージをすべてクリアしました。</p>
+                    <p>日々の防災に役立ててください。</p>
+                    <p class="certificate-date" id="certificate-date"></p>
+                </div>
+                <button id="back-to-home-complete-btn" class="btn-primary">ホームに戻る</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>
