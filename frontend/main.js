@@ -51,6 +51,14 @@ const cache = {
     pythonPath: null,  // Pythonパスは変わらないので永続キャッシュ
 };
 
+function getPythonChildEnv() {
+    return {
+        ...process.env,
+        PYTHONUTF8: '1',
+        PYTHONIOENCODING: 'utf-8'
+    };
+}
+
 /**
  * Pythonパスを解決する（キャッシュ付き）
  */
@@ -107,7 +115,12 @@ async function runNfcCli(args, inputText = null) {
         return runNfcCliWithStdin(args, inputText, timeout);
     }
     
-    const options = { timeout, maxBuffer: CONFIG.MAX_BUFFER };
+    const options = {
+        timeout,
+        maxBuffer: CONFIG.MAX_BUFFER,
+        encoding: 'utf8',
+        env: getPythonChildEnv()
+    };
     try {
         const { stdout } = await execFileAsync(pythonPath, [nfcCliPath, ...args], options);
         return JSON.parse(stdout);
@@ -127,7 +140,10 @@ async function runNfcCli(args, inputText = null) {
 function runNfcCliWithStdin(args, inputText, timeout = CONFIG.NFC_WRITE_TIMEOUT) {
     return new Promise((resolve) => {
         const pythonPath = resolvePythonPath();
-        const proc = spawn(pythonPath, [nfcCliPath, ...args], { timeout });
+        const proc = spawn(pythonPath, [nfcCliPath, ...args], {
+            timeout,
+            env: getPythonChildEnv()
+        });
         
         let stdout = '';
         let stderr = '';
@@ -143,11 +159,11 @@ function runNfcCliWithStdin(args, inputText, timeout = CONFIG.NFC_WRITE_TIMEOUT)
         }, timeout);
         
         proc.stdout.on('data', (data) => {
-            stdout += data.toString();
+            stdout += data.toString('utf8');
         });
         
         proc.stderr.on('data', (data) => {
-            stderr += data.toString();
+            stderr += data.toString('utf8');
         });
         
         proc.on('close', (code) => {

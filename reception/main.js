@@ -38,6 +38,14 @@ const backendVenvPythonWin = path.join(projectRoot, 'backend', 'venv', 'Scripts'
 // キャッシュ
 let cachedPythonPath = null;
 
+function getPythonChildEnv() {
+    return {
+        ...process.env,
+        PYTHONUTF8: '1',
+        PYTHONIOENCODING: 'utf-8'
+    };
+}
+
 /**
  * Pythonパスを解決する（キャッシュ付き）
  * 優先順位: PICORESQ_PYTHON環境変数 > backend/venv > python3
@@ -93,7 +101,12 @@ async function runNfcCli(args, inputText = null) {
     }
     
     // stdinなしの場合はexecFileを使用
-    const options = { timeout, maxBuffer: CONFIG.MAX_BUFFER };
+    const options = {
+        timeout,
+        maxBuffer: CONFIG.MAX_BUFFER,
+        encoding: 'utf8',
+        env: getPythonChildEnv()
+    };
     try {
         const { stdout } = await execFileAsync(pythonPath, [nfcCliPath, ...args], options);
         return JSON.parse(stdout);
@@ -112,7 +125,10 @@ async function runNfcCli(args, inputText = null) {
 function runNfcCliWithStdin(args, inputText, timeout = CONFIG.NFC_WRITE_TIMEOUT) {
     return new Promise((resolve) => {
         const pythonPath = resolvePythonPath();
-        const proc = spawn(pythonPath, [nfcCliPath, ...args], { timeout });
+        const proc = spawn(pythonPath, [nfcCliPath, ...args], {
+            timeout,
+            env: getPythonChildEnv()
+        });
         
         let stdout = '';
         let stderr = '';
@@ -128,11 +144,11 @@ function runNfcCliWithStdin(args, inputText, timeout = CONFIG.NFC_WRITE_TIMEOUT)
         }, timeout);
         
         proc.stdout.on('data', (data) => {
-            stdout += data.toString();
+            stdout += data.toString('utf8');
         });
         
         proc.stderr.on('data', (data) => {
-            stderr += data.toString();
+            stderr += data.toString('utf8');
         });
         
         proc.on('close', (code) => {
@@ -209,8 +225,8 @@ function createWindow() {
         });
     });
 
-    // index.htmlを読み込む
-    mainWindow.loadFile('index.html');
+    // index.htmlを絶対パスで読み込む
+    mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
     // 開発者ツールを開く（開発時のみ）
     if (process.argv.includes('--dev')) {

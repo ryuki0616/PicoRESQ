@@ -129,7 +129,7 @@ def cmd_status(args: argparse.Namespace) -> int:
 def cmd_read(args: argparse.Namespace) -> int:
     """受付データとクリア数を読み取って表示する"""
     _add_backend_to_syspath()
-    from nfc_writer import read_reception_data, read_cleared_count  # type: ignore
+    from nfc_writer import read_reception_data, read_reception_data_raw, read_cleared_count  # type: ignore
 
     uid = _wait_for_uid(args.wait_seconds, args.poll_interval)
     if not uid:
@@ -142,6 +142,9 @@ def cmd_read(args: argparse.Namespace) -> int:
     print(f"✓ カード: {uid}")
     print("== 受付データ ==")
     print(json.dumps(reception or {}, ensure_ascii=False, indent=2))
+    if args.raw:
+        print("== 受付データ診断 ==")
+        print(json.dumps(read_reception_data_raw(uid) or {}, ensure_ascii=False, indent=2))
     print("== クイズ進捗 ==")
     print(json.dumps({"cleared_count": cleared}, ensure_ascii=False, indent=2))
     return 0
@@ -231,6 +234,7 @@ def build_parser() -> argparse.ArgumentParser:
     r = sub.add_parser("read", help="受付データとクリア数を読み取り表示")
     r.add_argument("--wait-seconds", type=float, default=10, help="カードタッチ待機秒数")
     r.add_argument("--poll-interval", type=float, default=0.5, help="ポーリング間隔（秒）")
+    r.add_argument("--raw", action="store_true", help="受付データの生バイト診断も表示")
 
     w = sub.add_parser("write", help="受付データを書き込み（サーバー不要）")
     w.add_argument("--json", help="受付データJSONファイル（辞書）", default=None)
@@ -268,4 +272,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

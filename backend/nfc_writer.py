@@ -1068,6 +1068,104 @@ def decode_reception_data(data: bytes) -> Dict[str, Any]:
     return result
 
 
+def inspect_reception_data_bytes(data: bytes) -> Dict[str, Any]:
+    """
+    受付データ48バイトをデバッグ用に点検する。
+    """
+    if len(data) < RECEPTION_TOTAL_BYTES:
+        return {
+            "valid_length": False,
+            "length": len(data),
+            "expected_length": RECEPTION_TOTAL_BYTES,
+            "raw_hex": data.hex(),
+        }
+
+    name_bytes = data[0:RECEPTION_NAME_BYTES]
+    allergy_bytes = data[RECEPTION_NAME_BYTES:RECEPTION_NAME_BYTES + RECEPTION_ALLERGY_BYTES]
+
+    def inspect_segment(raw: bytes) -> Dict[str, Any]:
+        trimmed = raw.split(b"\x00", 1)[0]
+        info: Dict[str, Any] = {
+            "raw_hex": raw.hex(),
+            "trimmed_hex": trimmed.hex(),
+            "utf8_valid": True,
+            "decoded": "",
+        }
+        try:
+            info["decoded"] = trimmed.decode("utf-8")
+        except UnicodeDecodeError as e:
+            info["utf8_valid"] = False
+            info["decode_error"] = str(e)
+            info["decoded_lossy"] = trimmed.decode("utf-8", errors="replace")
+        return info
+
+    return {
+        "valid_length": True,
+        "length": len(data),
+        "raw_hex": data.hex(),
+        "name": inspect_segment(name_bytes),
+        "allergy": inspect_segment(allergy_bytes),
+        "allergy_overflow_flag": bool(data[RECEPTION_ALLERGY_FLAG_INDEX] & 0x01),
+        "vulnerability_flags": data[RECEPTION_VULNERABILITY_INDEX],
+        "quiz_clearance_flags": data[RECEPTION_QUIZ_FLAGS_INDEX] & 0x1F,
+    }
+
+
+def read_reception_data_raw(idm: str) -> Optional[Dict[str, Any]]:
+    """
+    NFCカードから受付生データを読み取り、デバッグ情報を返す。
+    """
+    from smartcard.System import readers
+
+    try:
+        reader_list = readers()
+        if not reader_list:
+            logger.warning("No NFC readers found")
+            return None
+
+        reader = _select_preferred_reader(reader_list)
+        if reader is None:
+            logger.warning("No NFC readers found")
+            return None
+        connection = reader.createConnection()
+        connection.connect()
+
+        card_type = detect_card_type(connection)
+        header_result = None
+        data = None
+
+        if card_type == "felica":
+            header_result = read_reception_header_felica(connection)
+            data = read_reception_data_felica(connection)
+        elif card_type == "mifare_ultralight":
+            header_result = read_reception_header_ntag213(connection)
+            data = read_reception_data_ntag213(connection)
+        elif card_type == "mifare_classic":
+            header_result = read_reception_header_mifare_classic(connection)
+            data = read_reception_data_mifare_classic(connection)
+        else:
+            logger.warning(f"Unsupported card type for reception data: {card_type}")
+            return None
+
+        if data is None:
+            return None
+
+        inspected = inspect_reception_data_bytes(data)
+        return {
+            "idm": idm,
+            "card_type": card_type,
+            "header": {
+                "reception_flag": header_result[0] if header_result else None,
+                "clearance_flags": header_result[1] if header_result else None,
+            },
+            "decoded": decode_reception_data(data),
+            "inspection": inspected,
+        }
+    except Exception as e:
+        logger.error(f"Error reading raw reception data: {e}")
+        return None
+
+
 def write_reception_data(idm: str, resident_data: Dict[str, Any], max_retries: int = 3) -> bool:
     """
     NFCカードに受付情報を書き込む

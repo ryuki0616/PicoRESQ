@@ -1,6 +1,11 @@
 @echo off
 REM PicoRESQ 受付システム - Electron起動スクリプト (Windows用)
 
+chcp 65001 >nul
+setlocal enabledelayedexpansion
+set PYTHONUTF8=1
+set PYTHONIOENCODING=utf-8
+
 echo.
 echo ============================================================
 echo PicoRESQ 受付システム (Electron) 起動

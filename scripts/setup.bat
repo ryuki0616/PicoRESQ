@@ -1,7 +1,10 @@
 @echo off
 REM PicoRESQ クイズシステム セットアップスクリプト (Windows用)
 
+chcp 65001 >nul
 setlocal enabledelayedexpansion
+set PYTHONUTF8=1
+set PYTHONIOENCODING=utf-8
 
 REM スクリプトはscripts/ディレクトリから実行されるため、プロジェクトルートに移動
 cd /d "%~dp0\.."

@@ -1,7 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pico-ResQ 避難所システム</title>
     <link rel="stylesheet" href="style.css">
@@ -14,9 +15,9 @@
         </header>
 
         <div class="tabs">
-            <button class="tab-btn active" onclick="openTab('read')">📖 受付（読み取り）</button>
-            <button class="tab-btn" onclick="openTab('write')">📝 新規登録（書き込み）</button>
-            <button class="tab-btn danger" onclick="openTab('erase')">🗑️ データ削除</button>
+            <button class="tab-btn active" onclick="openTab('read')">受付（読み取り）</button>
+            <button class="tab-btn" onclick="openTab('write')">新規登録（書き込み）</button>
+            <button class="tab-btn danger" onclick="openTab('erase')">データ削除</button>
         </div>
 
         <div id="read" class="tab-content active">
@@ -26,10 +27,10 @@
                     <p>登録済みのカードをリーダーにかざしてください</p>
                 </div>
                 <div id="read-result" style="display:none;">
-                    <h2 class="success">✅ 受付完了</h2>
+                    <h2 class="success">受付完了</h2>
                     <div id="resident-info"></div>
                     <div id="detail-button-container" style="margin-top: 20px; display: none;">
-                        <button id="view-detail-btn" class="detail-btn" onclick="showDetailInfo()">📋 詳細情報を見る</button>
+                        <button id="view-detail-btn" class="detail-btn" onclick="showDetailInfo()">詳細情報を見る</button>
                     </div>
                     <p style="color: #888; font-size: 0.9em; margin-top: 15px;">カードを離すと受付状態に戻ります</p>
                 </div>
@@ -70,7 +71,7 @@
                     </div>
 
                     <div class="submit-area">
-                        <button type="button" class="submit-btn" onclick="startRegistration()">💳 カードに書き込む</button>
+                        <button type="button" class="submit-btn" onclick="startRegistration()">カードに書き込む</button>
                     </div>
                 </form>
             </div>
@@ -79,7 +80,7 @@
         <div id="erase" class="tab-content">
             <div class="card-body center-content">
                 <div id="erase-status">
-                    <h2>⚠️ カードデータ削除</h2>
+                    <h2>カードデータ削除</h2>
                     <div class="warning-box">
                         <p><strong>注意:</strong> この操作はカード内の全ての避難者情報を削除します。</p>
                         <ul>
@@ -89,10 +90,10 @@
                         <p>削除したデータは復元できません。</p>
                     </div>
                     <p style="margin-top: 20px;">削除するカードをリーダーにかざしてください。</p>
-                    <button type="button" class="erase-btn" onclick="startErase()">🗑️ カードデータを削除する</button>
+                    <button type="button" class="erase-btn" onclick="startErase()">カードデータを削除する</button>
                 </div>
                 <div id="erase-result" style="display:none;">
-                    <div class="success-icon">✅</div>
+                    <div class="success-icon">完了</div>
                     <h2>削除完了</h2>
                     <p id="erase-message">カードのデータが正常に削除されました。</p>
                     <button type="button" class="btn-secondary" onclick="resetErase()">別のカードを削除</button>

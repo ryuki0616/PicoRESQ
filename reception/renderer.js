@@ -65,7 +65,7 @@ function stopPolling() {
 function getNfcApi() {
     const api = window.picoResqNfc;
     if (!api || typeof api.detect !== 'function') {
-        updateReaderStatus('✗ NFCリーダーエラー: NFC APIが初期化されていません', true);
+        updateReaderStatus('NFCリーダーエラー: NFC APIが初期化されていません', true);
         return null;
     }
     return api;
@@ -109,24 +109,24 @@ async function pollCard() {
         }
         const result = await api.detect();
         if (!result.ok) {
-            updateReaderStatus(`✗ NFCリーダーエラー: ${result.error}`, true);
+            updateReaderStatus(`NFCリーダーエラー: ${result.error}`, true);
             return;
         }
         const idm = result.idm;
         if (idm && idm !== lastDetectedIdm) {
             lastDetectedIdm = idm;
-            updateReaderStatus(`✓ カード検知: ${idm}`);
+            updateReaderStatus(`カード検知: ${idm}`);
             handleNfcDetected(idm);
         } else if (!idm && lastDetectedIdm) {
             const prev = lastDetectedIdm;
             lastDetectedIdm = null;
-            updateReaderStatus('ℹ カードをタッチしてください');
+            updateReaderStatus('カードをタッチしてください');
             handleNfcRemoved(prev);
         } else if (!idm) {
-            updateReaderStatus('ℹ カードをタッチしてください');
+            updateReaderStatus('カードをタッチしてください');
         }
     } catch (error) {
-        updateReaderStatus(`✗ NFCリーダーエラー: ${error.message}`, true);
+        updateReaderStatus(`NFCリーダーエラー: ${error.message}`, true);
     }
 }
 
@@ -339,7 +339,7 @@ async function fetchResidentInfo(idm) {
                     <td style="color: ${data.allergy ? '#ffca28' : 'inherit'};">${formatAllergyDisplay(data) || 'なし'}</td>
                 </tr>
             </table>
-            <p style="color: #2196f3; font-size: 0.9em; margin-top: 15px;">✓ カードから読み取りました</p>
+            <p style="color: #2196f3; font-size: 0.9em; margin-top: 15px;">カードから読み取りました</p>
         `;
 
         document.getElementById('resident-info').innerHTML = infoHtml;
@@ -348,7 +348,7 @@ async function fetchResidentInfo(idm) {
         console.error('Error fetching resident info:', error);
         currentResidentData = null;
         document.getElementById('resident-info').innerHTML = 
-            `<p style="color: #f44336;">✗ 読み取りエラー: ${error.message}</p>`;
+            `<p style="color: #f44336;">読み取りエラー: ${error.message}</p>`;
         document.getElementById('detail-button-container').style.display = 'none';
     }
 }
@@ -389,7 +389,7 @@ function showDetailInfo() {
         const boothNames = ['ブース1', 'ブース2', 'ブース3', 'ブース4', 'ブース5'];
         const progress = boothNames.map((name, i) => {
             const cleared = (flags & (1 << i)) !== 0;
-            return `${name}: ${cleared ? '✓クリア' : '未クリア'}`;
+            return `${name}: ${cleared ? 'クリア' : '未クリア'}`;
         }).join('<br>');
         detailHtml += `<p>${progress}</p>`;
         detailHtml += '</div>';
@@ -497,7 +497,7 @@ async function startErase() {
         // 成功表示（2秒後に自動で初期画面に戻る）
         const statusEl = document.getElementById('erase-status');
         statusEl.innerHTML = `
-            <div class="success-icon">✅</div>
+            <div class="success-icon">完了</div>
             <h2 style="color: #4caf50;">削除完了</h2>
             <p>カードID: ${result.idm} のデータが正常に削除されました。</p>
             <p style="color: #888; font-size: 0.9em; margin-top: 20px;">2秒後に自動で戻ります...</p>
@@ -529,8 +529,8 @@ function cancelErase() {
 function showEraseError(message) {
     const statusEl = document.getElementById('erase-status');
     statusEl.innerHTML = `
-        <h2>⚠️ カードデータ削除</h2>
-        <p style="color: #f44336; font-weight: bold;">✗ エラー: ${message}</p>
+        <h2>カードデータ削除</h2>
+        <p style="color: #f44336; font-weight: bold;">エラー: ${message}</p>
         <div class="warning-box">
             <p><strong>注意:</strong> この操作はカード内の全ての避難者情報を削除します。</p>
             <ul>
@@ -540,7 +540,7 @@ function showEraseError(message) {
             <p>削除したデータは復元できません。</p>
         </div>
         <p style="margin-top: 20px;">削除するカードをリーダーにかざしてください。</p>
-        <button type="button" class="erase-btn" onclick="startErase()">🗑️ カードデータを削除する</button>
+        <button type="button" class="erase-btn" onclick="startErase()">カードデータを削除する</button>
     `;
 }
 
@@ -548,7 +548,7 @@ function showEraseError(message) {
 function showEraseInitial() {
     const statusEl = document.getElementById('erase-status');
     statusEl.innerHTML = `
-        <h2>⚠️ カードデータ削除</h2>
+        <h2>カードデータ削除</h2>
         <div class="warning-box">
             <p><strong>注意:</strong> この操作はカード内の全ての避難者情報を削除します。</p>
             <ul>
@@ -558,6 +558,6 @@ function showEraseInitial() {
             <p>削除したデータは復元できません。</p>
         </div>
         <p style="margin-top: 20px;">削除するカードをリーダーにかざしてください。</p>
-        <button type="button" class="erase-btn" onclick="startErase()">🗑️ カードデータを削除する</button>
+        <button type="button" class="erase-btn" onclick="startErase()">カードデータを削除する</button>
     `;
 }

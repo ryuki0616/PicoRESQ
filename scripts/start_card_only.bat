@@ -7,6 +7,10 @@ REM   scripts\start_card_only.bat read
 REM   scripts\start_card_only.bat write --name "山田太郎" --address "東京都" --tel "090..." --family-count 3 --care-needed 0
 REM   scripts\start_card_only.bat write-cleared --count 2
 
+chcp 65001 >nul
+set PYTHONUTF8=1
+set PYTHONIOENCODING=utf-8
+
 cd /d "%~dp0\.."
 if exist "backend\.venv\Scripts\python.exe" (
   cd backend
@@ -22,4 +26,3 @@ if exist "backend\venv\Scripts\python.exe" (
 )
 
 python scripts\card_only.py %*
-
