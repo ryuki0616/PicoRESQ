@@ -123,6 +123,27 @@ test('受付は古い受付内フラグよりヘッダー由来のクリア状�
     assert.match(ui.element('detail-info-content').innerHTML, /ブース3: ✓クリア/);
 });
 
+test('受付は参加者データのない管理者カードを登録済みと表示する', async () => {
+    const ui = createUi('reception');
+    // 直前に参加者情報を表示していても、その詳細を管理者カードに引き継がない。
+    ui.context.window.picoResqNfc.read = async () => card();
+    await ui.run('fetchResidentInfo("A")');
+    ui.run('showDetailInfo()');
+    ui.context.window.picoResqNfc.read = async () => ({ ok: true, idm: 'ADMIN', is_admin: true });
+    await ui.run('fetchResidentInfo("ADMIN")');
+    assert.match(ui.element('resident-info').innerHTML, /管理者カード（登録済み）/);
+    assert.doesNotMatch(ui.element('resident-info').innerHTML, /未設定|未登録|読み取りエラー/);
+    assert.equal(ui.run('currentResidentData'), null);
+    assert.equal(ui.run('needsReadRetry'), false);
+    assert.equal(ui.element('detail-button-container').style.display, 'none');
+    assert.equal(ui.element('detail-modal').style.display, 'none');
+    // 続けて参加者カードを読み取れることも確認する。
+    ui.context.window.picoResqNfc.read = async () => card();
+    await ui.run('fetchResidentInfo("A")');
+    assert.match(ui.element('resident-info').innerHTML, /テスト/);
+    assert.equal(ui.element('detail-button-container').style.display, 'block');
+});
+
 function prepareAnswer(ui) {
     ui.run(`setupEventListeners(); selectedAnswer = 1; currentIdm = 'A';
         currentBoothId = 1; currentQuiz = {correct_answer: 1, quiz_number: 3};

@@ -14,6 +14,19 @@ import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+ADMIN_CARDS_FILE = Path(__file__).resolve().parent.parent / "backend" / "admin_cards.json"
+
+
+def _is_admin_card(uid: str) -> bool:
+    """クイズと共通の登録ファイルで、管理者カードかを確認する。"""
+    if not ADMIN_CARDS_FILE.exists():
+        return False
+    data = json.loads(ADMIN_CARDS_FILE.read_text(encoding="utf-8"))
+    card_ids = data.get("admin_card_ids", [])
+    if not isinstance(card_ids, list) or not all(isinstance(card, str) for card in card_ids):
+        raise ValueError("管理者カードの登録形式が不正です")
+    return uid.upper() in [card.upper() for card in card_ids]
+
 
 def _add_backend_to_syspath() -> Path:
     """
@@ -114,6 +127,14 @@ def cmd_read(args: argparse.Namespace) -> int:
     if not uid:
         return _emit_error("カードが検知できません")
 
+    try:
+        is_admin = _is_admin_card(uid)
+    except (OSError, ValueError, AttributeError):
+        return _emit_error("管理者カードの登録情報を読み取れませんでした")
+    if is_admin:
+        # 管理者登録はPC上に保存されるため、参加者用のカード内データは要求しない。
+        return _emit_ok({"idm": uid, "is_admin": True})
+
     # 通信失敗を空の登録情報や未クリアに置き換えない。
     for attempt in range(3):
         reception = read_reception_data(uid)
@@ -136,6 +157,7 @@ def cmd_read(args: argparse.Namespace) -> int:
     return _emit_ok(
         {
             "idm": uid,
+            "is_admin": False,
             "reception": reception,
             "cleared_count": cleared_count,
             "clearance_flags": clearance_flags,

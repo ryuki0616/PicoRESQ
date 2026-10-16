@@ -6,6 +6,7 @@ import importlib.util
 import io
 import json
 import sys
+import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -22,6 +23,12 @@ SPEC.loader.exec_module(cli)
 
 class NfcStateTests(unittest.TestCase):
     """通信失敗を未登録・未クリアに変換しないことを検証する。"""
+
+    def setUp(self) -> None:
+        """既存の参加者テストはPCの実際の管理者登録に依存させない。"""
+        patcher = patch.object(cli, "_is_admin_card", return_value=False)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def read_card(self) -> tuple[int, dict]:
         """CLIのJSON応答を取得する。"""
@@ -139,6 +146,50 @@ class NfcStateTests(unittest.TestCase):
         self.assertEqual(data["reception"]["allergy"], registration["allergy"])
         self.assertEqual(data["reception"]["quiz_clearance_flags"], 5)
         self.assertEqual(data["cleared_count"], 2)
+
+
+class AdminCardTests(unittest.TestCase):
+    """管理者カードは参加者データを必要とせず、登録ファイルを正とする。"""
+
+    def test_admin_lookup_uses_latest_registry_and_ignores_case(self) -> None:
+        """大文字小文字を区別せず、登録変更を次の読み取りで反映する。"""
+        with tempfile.TemporaryDirectory() as directory:
+            registry = Path(directory) / "admin_cards.json"
+            with patch.object(cli, "ADMIN_CARDS_FILE", registry):
+                self.assertFalse(cli._is_admin_card("ABCD"))
+                registry.write_text('{"admin_card_ids": ["abcd"]}', encoding="utf-8")
+                self.assertTrue(cli._is_admin_card("ABCD"))
+                self.assertFalse(cli._is_admin_card("EEEE"))
+                registry.write_text('{"admin_card_ids": []}', encoding="utf-8")
+                self.assertFalse(cli._is_admin_card("ABCD"))
+
+    @patch.object(cli, "_wait_for_uid", return_value="ABCD")
+    def test_admin_without_resident_data_is_recognized(self, *_: object) -> None:
+        """カード内の参加者情報が読めなくても、登録済み管理者として返す。"""
+        with patch.object(cli, "_is_admin_card", return_value=True), \
+             patch.object(nfc_writer, "read_reception_data") as read_resident, \
+             patch.object(nfc_writer, "read_booth_clearance_flags") as read_progress:
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = cli.cmd_read(argparse.Namespace(wait_seconds=0, poll_interval=0.2))
+        self.assertEqual(code, 0)
+        self.assertEqual(json.loads(output.getvalue()), {
+            "ok": True, "idm": "ABCD", "is_admin": True
+        })
+        read_resident.assert_not_called()
+        read_progress.assert_not_called()
+
+    @patch.object(cli, "_wait_for_uid", return_value="ABCD")
+    def test_invalid_registry_is_not_treated_as_unregistered(self, *_: object) -> None:
+        """登録ファイルの不正を未登録と誤判定しない。"""
+        with patch.object(cli, "_is_admin_card", side_effect=ValueError), \
+             patch.object(nfc_writer, "read_reception_data") as read_resident:
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = cli.cmd_read(argparse.Namespace(wait_seconds=0, poll_interval=0.2))
+        self.assertEqual(code, 1)
+        self.assertFalse(json.loads(output.getvalue())["ok"])
+        read_resident.assert_not_called()
 
 
 if __name__ == "__main__":

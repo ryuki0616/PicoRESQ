@@ -328,6 +328,18 @@ async function fetchResidentInfo(idm) {
         if (result.idm !== idm) {
             throw new Error('カードが交換されました。再度読み取ってください');
         }
+        if (result.is_admin === true) {
+            // 管理者登録と参加者登録を区別し、氏名未登録や読取失敗として扱わない。
+            currentResidentData = null;
+            needsReadRetry = false;
+            updateReaderStatus('✓ 管理者カード（登録済み）');
+            document.getElementById('resident-info').innerHTML =
+                '<p>✓ 管理者カード（登録済み）</p>' +
+                '<p>クイズの管理者カードとして登録されています。</p>';
+            document.getElementById('detail-button-container').style.display = 'none';
+            closeDetailInfo();
+            return;
+        }
 
         const data = result.reception || {};
         // クイズと同じヘッダー由来の進捗を表示する。
