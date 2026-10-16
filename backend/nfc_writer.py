@@ -9,6 +9,7 @@ import time
 from typing import Optional, Dict, Any, List
 from smartcard.util import toHexString, toBytes
 from smartcard.CardConnection import CardConnection
+from nfc_connection import card_connection
 
 logger = logging.getLogger("uvicorn")
 
@@ -380,21 +381,20 @@ def read_cleared_count(idm: str) -> int:
         if reader is None:
             logger.warning("No NFC readers found")
             return 0
-        connection = reader.createConnection()
-        connection.connect()
-        
-        # カードタイプを検出
-        card_type = detect_card_type(connection)
-        
-        if card_type == "felica":
-            return read_cleared_count_felica(connection)
-        elif card_type == "mifare_classic":
-            return read_cleared_count_mifare_classic(connection)
-        elif card_type == "mifare_ultralight":
-            return read_cleared_count_mifare_ultralight(connection)
-        else:
-            logger.warning(f"Unsupported card type: {card_type}")
-            return 0
+        with card_connection(reader) as connection:
+
+            # カードタイプを検出
+            card_type = detect_card_type(connection)
+
+            if card_type == "felica":
+                return read_cleared_count_felica(connection)
+            elif card_type == "mifare_classic":
+                return read_cleared_count_mifare_classic(connection)
+            elif card_type == "mifare_ultralight":
+                return read_cleared_count_mifare_ultralight(connection)
+            else:
+                logger.warning(f"Unsupported card type: {card_type}")
+                return 0
     except Exception as e:
         logger.error(f"Error reading cleared count: {e}")
         return 0
@@ -439,27 +439,26 @@ def write_cleared_count(idm: str, count: int, max_retries: int = 3) -> bool:
                     time.sleep(0.2)
                     continue
                 return False
-            connection = reader.createConnection()
-            connection.connect()
-            
-            # カードタイプを検出
-            card_type = detect_card_type(connection)
-            
-            success = False
-            if card_type == "felica":
-                success = write_cleared_count_felica(connection, count)
-            elif card_type == "mifare_classic":
-                success = write_cleared_count_mifare_classic(connection, count)
-            elif card_type == "mifare_ultralight":
-                success = write_cleared_count_mifare_ultralight(connection, count)
-            else:
-                logger.warning(f"Unsupported card type: {card_type}")
-                return False
-            
-            if success:
-                return True
-            elif attempt < max_retries - 1:
-                logger.info(f"Write attempt {attempt + 1} failed, retrying...")
+            with card_connection(reader) as connection:
+
+                # カードタイプを検出
+                card_type = detect_card_type(connection)
+
+                success = False
+                if card_type == "felica":
+                    success = write_cleared_count_felica(connection, count)
+                elif card_type == "mifare_classic":
+                    success = write_cleared_count_mifare_classic(connection, count)
+                elif card_type == "mifare_ultralight":
+                    success = write_cleared_count_mifare_ultralight(connection, count)
+                else:
+                    logger.warning(f"Unsupported card type: {card_type}")
+                    return False
+
+                if success:
+                    return True
+                elif attempt < max_retries - 1:
+                    logger.info(f"Write attempt {attempt + 1} failed, retrying...")
         except Exception as e:
             logger.error(f"Error writing cleared count (attempt {attempt + 1}): {e}")
             if attempt < max_retries - 1:
@@ -1105,43 +1104,42 @@ def write_reception_data(idm: str, resident_data: Dict[str, Any], max_retries: i
                     time.sleep(0.2)
                     continue
                 return False
-            connection = reader.createConnection()
-            connection.connect()
-            
-            card_type = detect_card_type(connection)
-            
-            if card_type == "felica":
-                # クリア可否フラグは既存の値を読み取る（なければ0）
-                header_result = read_reception_header_felica(connection)
-                clearance_flags = header_result[1] if header_result else 0
-                
-                success_header = write_reception_header_felica(connection, reception_flag, clearance_flags)
-                success_data = write_reception_data_felica(connection, encoded_data)
-                success = success_header and success_data
-            elif card_type == "mifare_ultralight":
-                # クリア可否フラグは既存の値を読み取る（なければ0）
-                header_result = read_reception_header_ntag213(connection)
-                clearance_flags = header_result[1] if header_result else 0
-                
-                success_header = write_reception_header_ntag213(connection, reception_flag, clearance_flags)
-                success_data = write_reception_data_ntag213(connection, encoded_data)
-                success = success_header and success_data
-            elif card_type == "mifare_classic":
-                header_result = read_reception_header_mifare_classic(connection)
-                clearance_flags = header_result[1] if header_result else 0
-                
-                success_header = write_reception_header_mifare_classic(connection, reception_flag, clearance_flags)
-                success_data = write_reception_data_mifare_classic(connection, encoded_data)
-                success = success_header and success_data
-            else:
-                logger.warning(f"Unsupported card type for reception data: {card_type}")
-                return False
-            
-            if success:
-                logger.info(f"Successfully wrote reception data to {card_type} card")
-                return True
-            elif attempt < max_retries - 1:
-                logger.info(f"Write attempt {attempt + 1} failed, retrying...")
+            with card_connection(reader) as connection:
+
+                card_type = detect_card_type(connection)
+
+                if card_type == "felica":
+                    # クリア可否フラグは既存の値を読み取る（なければ0）
+                    header_result = read_reception_header_felica(connection)
+                    clearance_flags = header_result[1] if header_result else 0
+
+                    success_header = write_reception_header_felica(connection, reception_flag, clearance_flags)
+                    success_data = write_reception_data_felica(connection, encoded_data)
+                    success = success_header and success_data
+                elif card_type == "mifare_ultralight":
+                    # クリア可否フラグは既存の値を読み取る（なければ0）
+                    header_result = read_reception_header_ntag213(connection)
+                    clearance_flags = header_result[1] if header_result else 0
+
+                    success_header = write_reception_header_ntag213(connection, reception_flag, clearance_flags)
+                    success_data = write_reception_data_ntag213(connection, encoded_data)
+                    success = success_header and success_data
+                elif card_type == "mifare_classic":
+                    header_result = read_reception_header_mifare_classic(connection)
+                    clearance_flags = header_result[1] if header_result else 0
+
+                    success_header = write_reception_header_mifare_classic(connection, reception_flag, clearance_flags)
+                    success_data = write_reception_data_mifare_classic(connection, encoded_data)
+                    success = success_header and success_data
+                else:
+                    logger.warning(f"Unsupported card type for reception data: {card_type}")
+                    return False
+
+                if success:
+                    logger.info(f"Successfully wrote reception data to {card_type} card")
+                    return True
+                elif attempt < max_retries - 1:
+                    logger.info(f"Write attempt {attempt + 1} failed, retrying...")
         except Exception as e:
             logger.error(f"Error writing reception data (attempt {attempt + 1}): {e}")
             if attempt < max_retries - 1:
@@ -1173,24 +1171,23 @@ def read_reception_data(idm: str) -> Optional[Dict[str, Any]]:
         if reader is None:
             logger.warning("No NFC readers found")
             return None
-        connection = reader.createConnection()
-        connection.connect()
-        
-        card_type = detect_card_type(connection)
-        
-        if card_type == "felica":
-            data = read_reception_data_felica(connection)
-        elif card_type == "mifare_ultralight":
-            data = read_reception_data_ntag213(connection)
-        elif card_type == "mifare_classic":
-            data = read_reception_data_mifare_classic(connection)
-        else:
-            logger.warning(f"Unsupported card type for reception data: {card_type}")
+        with card_connection(reader) as connection:
+
+            card_type = detect_card_type(connection)
+
+            if card_type == "felica":
+                data = read_reception_data_felica(connection)
+            elif card_type == "mifare_ultralight":
+                data = read_reception_data_ntag213(connection)
+            elif card_type == "mifare_classic":
+                data = read_reception_data_mifare_classic(connection)
+            else:
+                logger.warning(f"Unsupported card type for reception data: {card_type}")
+                return None
+
+            if data:
+                return decode_reception_data(data)
             return None
-        
-        if data:
-            return decode_reception_data(data)
-        return None
     except Exception as e:
         logger.error(f"Error reading reception data: {e}")
         return None
@@ -1240,36 +1237,35 @@ def write_booth_clearance_flags(idm: str, booth_flags: List[bool], max_retries: 
                     time.sleep(0.2)
                     continue
                 return False
-            connection = reader.createConnection()
-            connection.connect()
-            
-            card_type = detect_card_type(connection)
-            
-            # ヘッダー領域のみを更新（データ領域は触らない）
-            # 既存の受付フラグを読み取り、クリア可否フラグだけ更新
-            success = False
-            if card_type == "mifare_ultralight":
-                header_result = read_reception_header_ntag213(connection)
-                reception_flag = header_result[0] if header_result else 0x01
-                success = write_reception_header_ntag213(connection, reception_flag, clearance_flags)
-            elif card_type == "felica":
-                header_result = read_reception_header_felica(connection)
-                reception_flag = header_result[0] if header_result else 0x01
-                success = write_reception_header_felica(connection, reception_flag, clearance_flags)
-            elif card_type == "mifare_classic":
-                header_result = read_reception_header_mifare_classic(connection)
-                reception_flag = header_result[0] if header_result else 0x01
-                success = write_reception_header_mifare_classic(connection, reception_flag, clearance_flags)
-            else:
-                logger.warning(f"Unsupported card type: {card_type}")
-                return False
-            
-            if success:
-                logger.info("Successfully wrote clearance flags to card header")
-                return True
-            elif attempt < max_retries - 1:
-                logger.info(f"Write attempt {attempt + 1} failed, retrying...")
-                time.sleep(0.2)
+            with card_connection(reader) as connection:
+
+                card_type = detect_card_type(connection)
+
+                # ヘッダー領域のみを更新（データ領域は触らない）
+                # 既存の受付フラグを読み取り、クリア可否フラグだけ更新
+                success = False
+                if card_type == "mifare_ultralight":
+                    header_result = read_reception_header_ntag213(connection)
+                    reception_flag = header_result[0] if header_result else 0x01
+                    success = write_reception_header_ntag213(connection, reception_flag, clearance_flags)
+                elif card_type == "felica":
+                    header_result = read_reception_header_felica(connection)
+                    reception_flag = header_result[0] if header_result else 0x01
+                    success = write_reception_header_felica(connection, reception_flag, clearance_flags)
+                elif card_type == "mifare_classic":
+                    header_result = read_reception_header_mifare_classic(connection)
+                    reception_flag = header_result[0] if header_result else 0x01
+                    success = write_reception_header_mifare_classic(connection, reception_flag, clearance_flags)
+                else:
+                    logger.warning(f"Unsupported card type: {card_type}")
+                    return False
+
+                if success:
+                    logger.info("Successfully wrote clearance flags to card header")
+                    return True
+                elif attempt < max_retries - 1:
+                    logger.info(f"Write attempt {attempt + 1} failed, retrying...")
+                    time.sleep(0.2)
         except Exception as e:
             logger.error(f"Error writing clearance flags (attempt {attempt + 1}): {e}")
             if attempt < max_retries - 1:
@@ -1302,32 +1298,31 @@ def read_booth_clearance_flags(idm: str) -> Optional[List[bool]]:
         if reader is None:
             logger.warning("No NFC readers found")
             return None
-        connection = reader.createConnection()
-        connection.connect()
-        
-        card_type = detect_card_type(connection)
-        
-        header_result = None
-        if card_type == "mifare_ultralight":
-            header_result = read_reception_header_ntag213(connection)
-        elif card_type == "felica":
-            header_result = read_reception_header_felica(connection)
-        elif card_type == "mifare_classic":
-            header_result = read_reception_header_mifare_classic(connection)
-        else:
-            logger.warning(f"Unsupported card type: {card_type}")
-            return None
-        
-        if header_result is None:
-            logger.warning("Failed to read reception header for clearance flags")
-            return None
-        
-        # ヘッダーの2バイト目がクリア可否フラグ
-        clearance_flags = header_result[1]
-        booth_flags = []
-        for i in range(5):
-            booth_flags.append((clearance_flags & (1 << i)) != 0)
-        return booth_flags
+        with card_connection(reader) as connection:
+
+            card_type = detect_card_type(connection)
+
+            header_result = None
+            if card_type == "mifare_ultralight":
+                header_result = read_reception_header_ntag213(connection)
+            elif card_type == "felica":
+                header_result = read_reception_header_felica(connection)
+            elif card_type == "mifare_classic":
+                header_result = read_reception_header_mifare_classic(connection)
+            else:
+                logger.warning(f"Unsupported card type: {card_type}")
+                return None
+
+            if header_result is None:
+                logger.warning("Failed to read reception header for clearance flags")
+                return None
+
+            # ヘッダーの2バイト目がクリア可否フラグ
+            clearance_flags = header_result[1]
+            booth_flags = []
+            for i in range(5):
+                booth_flags.append((clearance_flags & (1 << i)) != 0)
+            return booth_flags
     except Exception as e:
         logger.error(f"Error reading clearance flags: {e}")
         return None
@@ -1359,11 +1354,10 @@ def set_booth_cleared(idm: str, booth_id: int, max_retries: int = 3) -> bool:
         import time
         time.sleep(0.3)
     
-    # 読み取り失敗時は既存フラグを保持するため、書き込みを中止しない
-    # 代わりに空のフラグから開始（最悪ケースでも指定ブースのクリアは記録される）
+    # 既存進捗を確認できない場合は上書きせず、再試行を求める。
     if current_flags is None:
-        logger.warning(f"Could not read existing flags, will only set booth {booth_id}")
-        current_flags = [False] * 5
+        logger.error("Could not read existing flags; refusing to overwrite progress")
+        return False
     
     # 指定された試練のフラグを設定
     current_flags[booth_id - 1] = True
@@ -1412,28 +1406,27 @@ def erase_card_data(idm: str, max_retries: int = 3) -> bool:
                     time.sleep(0.2)
                     continue
                 return False
-            connection = reader.createConnection()
-            connection.connect()
-            
-            card_type = detect_card_type(connection)
-            
-            success = False
-            if card_type == "mifare_ultralight":
-                success = _erase_card_data_ntag(connection)
-            elif card_type == "felica":
-                success = _erase_card_data_felica(connection)
-            elif card_type == "mifare_classic":
-                success = _erase_card_data_mifare_classic(connection)
-            else:
-                logger.warning(f"Unsupported card type for erase: {card_type}")
-                return False
-            
-            if success:
-                logger.info(f"Successfully erased card data for {card_type} card")
-                return True
-            elif attempt < max_retries - 1:
-                logger.info(f"Erase attempt {attempt + 1} failed, retrying...")
-                time.sleep(0.2)
+            with card_connection(reader) as connection:
+
+                card_type = detect_card_type(connection)
+
+                success = False
+                if card_type == "mifare_ultralight":
+                    success = _erase_card_data_ntag(connection)
+                elif card_type == "felica":
+                    success = _erase_card_data_felica(connection)
+                elif card_type == "mifare_classic":
+                    success = _erase_card_data_mifare_classic(connection)
+                else:
+                    logger.warning(f"Unsupported card type for erase: {card_type}")
+                    return False
+
+                if success:
+                    logger.info(f"Successfully erased card data for {card_type} card")
+                    return True
+                elif attempt < max_retries - 1:
+                    logger.info(f"Erase attempt {attempt + 1} failed, retrying...")
+                    time.sleep(0.2)
         except Exception as e:
             logger.error(f"Error erasing card data (attempt {attempt + 1}): {e}")
             if attempt < max_retries - 1:

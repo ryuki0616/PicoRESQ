@@ -20,6 +20,9 @@ let lastDetectedIdm = null;
 let boothCorrectCounts = {};
 let pollIntervalId = null;  // ポーリングのインターバルID
 let isNfcOperating = false; // NFC操作中フラグ
+let isPolling = false; // 検知・初回読み取りの重複を防ぐ
+let isSubmittingAnswer = false;
+let needsReadRetry = false;
 
 // ポーリングを開始
 function startPolling() {
@@ -95,9 +98,10 @@ function canUserAccessBooth(boothId) {
 
 async function pollCard() {
     // データが読み込まれていない場合、またはNFC操作中はスキップ
-    if (!dataLoaded || isNfcOperating) {
+    if (!dataLoaded || isNfcOperating || isPolling) {
         return;
     }
+    isPolling = true;
     
     try {
         const result = await window.picoResqNfc.detect();
@@ -106,12 +110,13 @@ async function pollCard() {
             return;
         }
         const idm = result.idm;
-        if (idm && idm !== lastDetectedIdm) {
+        if (idm && (idm !== lastDetectedIdm || needsReadRetry)) {
+            needsReadRetry = false;
             lastDetectedIdm = idm;
             const isAdmin = isAdminCard(idm);
             console.log(`カード検知: ${idm}, 管理者: ${isAdmin}`);
             updateCardStatus('認証OK', '#2e7d32', 'detected');
-            handleCardDetected(idm, isAdmin);
+            await handleCardDetected(idm, isAdmin);
         } else if (!idm && lastDetectedIdm) {
             const prev = lastDetectedIdm;
             lastDetectedIdm = null;
@@ -122,11 +127,13 @@ async function pollCard() {
         }
     } catch (error) {
         updateCardStatus('⚠️ エラー', '#dc3545', 'error');
+    } finally {
+        isPolling = false;
     }
 }
 
 // カード検知時の処理
-function handleCardDetected(idm, isAdmin) {
+async function handleCardDetected(idm, isAdmin) {
     console.log('handleCardDetected呼び出し:', idm, 'isAdmin:', isAdmin);
     
     if (!idm) {
@@ -180,7 +187,7 @@ function handleCardDetected(idm, isAdmin) {
             adminBtn.style.display = 'none';
         }
         // 進捗を取得して表示（fetchProgress内でcheckAndShowStartButtonも呼ばれる）
-        fetchProgress(idm);
+        await fetchProgress(idm);
     }
     
     console.log('カード検知処理が完了しました');
@@ -329,6 +336,10 @@ async function fetchProgress(idm) {
         if (!data.ok) {
             throw new Error(data.error || 'カード読み取りに失敗しました');
         }
+        if (currentIdm !== idm) return;
+        if (data.idm !== idm) {
+            throw new Error('カードが交換されました。再度読み取ってください');
+        }
         
         // 受付済みかどうかチェック（reception.nameが空なら未受付）
         const reception = data.reception || {};
@@ -347,11 +358,11 @@ async function fetchProgress(idm) {
                 indicator.classList.add('error');
             }
             
-        // 進捗表示と挑戦ボタンを非表示
-        document.getElementById('progress-display').style.display = 'none';
-        document.getElementById('start-quiz-section').style.display = 'none';
-        return;
-    }
+            // 進捗表示と挑戦ボタンを非表示
+            document.getElementById('progress-display').style.display = 'none';
+            document.getElementById('start-quiz-section').style.display = 'none';
+            return;
+        }
         
         const clearanceFlags = data.clearance_flags || [];
         clearedCount = data.cleared_count || 0;
@@ -365,6 +376,13 @@ async function fetchProgress(idm) {
         checkAndShowStartButton();
     } catch (error) {
         console.error('進捗取得エラー:', error);
+        if (currentIdm !== idm) return;
+        const statusText = document.getElementById('card-status-text');
+        statusText.textContent = '⚠️ 読み取り失敗・再試行中';
+        statusText.style.color = '#dc3545';
+        document.getElementById('start-quiz-section').style.display = 'none';
+        // 通信失敗を未受付にせず、同じカードでも読み直す。
+        needsReadRetry = true;
     }
 }
 
@@ -518,10 +536,10 @@ function setupEventListeners() {
     const submitAnswerBtn = document.getElementById('submit-answer-btn');
     if (submitAnswerBtn) {
         submitAnswerBtn.addEventListener('click', async () => {
-            if (selectedAnswer === null || !currentIdm || !currentBoothId) {
+            if (isSubmittingAnswer || selectedAnswer === null || !currentIdm || !currentBoothId) {
                 return;
             }
-
+            isSubmittingAnswer = true;
             try {
                 const correct = selectedAnswer === currentQuiz?.correct_answer;
                 const currentCount = boothCorrectCounts[currentBoothId] || 0;
@@ -540,14 +558,16 @@ function setupEventListeners() {
                     try {
                         const writeResult = await window.picoResqNfc.setBoothCleared(currentBoothId);
                         if (!writeResult.ok) {
-                            console.warn('クリアフラグ書き込み失敗:', writeResult.error);
+                            throw new Error(writeResult.error || 'クリア情報の保存に失敗しました');
                         }
                         const progress = await window.picoResqNfc.read();
-                        if (progress.ok) {
-                            const flags = progress.clearance_flags || [];
-                            clearedCountFromCard = progress.cleared_count;
-                            allCleared = flags.length >= 5 && flags.every((f) => f);
+                        if (!progress.ok || progress.idm !== currentIdm ||
+                            !progress.clearance_flags?.[currentBoothId - 1]) {
+                            throw new Error('カードのクリア情報を確認できませんでした');
                         }
+                        const flags = progress.clearance_flags;
+                        clearedCountFromCard = flags.filter(Boolean).length;
+                        allCleared = flags.length === 5 && flags.every((f) => f);
                     } finally {
                         isNfcOperating = false;
                         startPolling();
@@ -582,7 +602,9 @@ function setupEventListeners() {
                 });
             } catch (error) {
                 console.error('回答送信エラー:', error);
-                alert('回答の送信に失敗しました');
+                alert(`${error.message}\nカードを置いたまま、もう一度回答してください。`);
+            } finally {
+                isSubmittingAnswer = false;
             }
         });
     }
@@ -776,7 +798,7 @@ async function showResultScreen(result) {
     }
 
     // 試練がクリアされた場合
-    if (result.booth_cleared) {
+    if (result.booth_cleared && !result.all_cleared) {
         updateProgress(result.cleared_count || 0);
         
         // 進捗を再取得して表示（NFCカードから最新の状態を読み取る）

@@ -116,6 +116,12 @@ def resolve_python_path(project_root: Path) -> Optional[str]:
     venv_python_win = project_root / 'backend' / 'venv' / 'Scripts' / 'python.exe'
     if venv_python_win.exists():
         return str(venv_python_win)
+    for candidate in (
+        project_root / 'backend' / '.venv' / 'bin' / 'python',
+        project_root / 'backend' / '.venv' / 'Scripts' / 'python.exe',
+    ):
+        if candidate.exists():
+            return str(candidate)
     return None
 
 def start_app(reception_dir):

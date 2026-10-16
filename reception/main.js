@@ -34,13 +34,15 @@ const projectRoot = path.join(__dirname, '..');
 const nfcCliPath = path.join(projectRoot, 'scripts', 'nfc_cli.py');
 const backendVenvPython = path.join(projectRoot, 'backend', 'venv', 'bin', 'python');
 const backendVenvPythonWin = path.join(projectRoot, 'backend', 'venv', 'Scripts', 'python.exe');
+const backendUvPython = path.join(projectRoot, 'backend', '.venv', 'bin', 'python');
+const backendUvPythonWin = path.join(projectRoot, 'backend', '.venv', 'Scripts', 'python.exe');
 
 // キャッシュ
 let cachedPythonPath = null;
 
 /**
  * Pythonパスを解決する（キャッシュ付き）
- * 優先順位: PICORESQ_PYTHON環境変数 > backend/venv > python3
+ * 優先順位: PICORESQ_PYTHON環境変数 > backend/venv > backend/.venv > python3
  */
 function resolvePythonPath() {
     if (cachedPythonPath) {
@@ -53,6 +55,10 @@ function resolvePythonPath() {
         cachedPythonPath = backendVenvPython;
     } else if (fs.existsSync(backendVenvPythonWin)) {
         cachedPythonPath = backendVenvPythonWin;
+    } else if (fs.existsSync(backendUvPython)) {
+        cachedPythonPath = backendUvPython;
+    } else if (fs.existsSync(backendUvPythonWin)) {
+        cachedPythonPath = backendUvPythonWin;
     } else {
         cachedPythonPath = 'python3';
     }
@@ -101,6 +107,13 @@ async function runNfcCli(args, inputText = null) {
         // タイムアウトの場合は明確なメッセージを返す
         if (error.killed) {
             return { ok: false, error: 'タイムアウト: カードが検知できませんでした' };
+        }
+        // CLIが正常に返した通信エラーは、そのメッセージを画面に渡す。
+        try {
+            const result = JSON.parse(error.stdout);
+            if (result.ok === false) return result;
+        } catch (_) {
+            // JSON応答がない異常終了は、従来のエラー情報を使用する。
         }
         return { ok: false, error: error.stderr || error.message };
     }

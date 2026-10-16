@@ -18,6 +18,10 @@ if "%PICORESQ_PYTHON%"=="" (
         set "PICORESQ_PYTHON=%cd%\backend\venv\Scripts\python.exe"
     ) else if exist "backend\venv\bin\python" (
         set "PICORESQ_PYTHON=%cd%\backend\venv\bin\python"
+    ) else if exist "backend\.venv\Scripts\python.exe" (
+        set "PICORESQ_PYTHON=%cd%\backend\.venv\Scripts\python.exe"
+    ) else if exist "backend\.venv\bin\python" (
+        set "PICORESQ_PYTHON=%cd%\backend\.venv\bin\python"
     )
 )
 if not "%PICORESQ_PYTHON%"=="" (

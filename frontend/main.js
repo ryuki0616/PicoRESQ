@@ -36,6 +36,8 @@ const projectRoot = path.join(__dirname, '..');
 const nfcCliPath = path.join(projectRoot, 'scripts', 'nfc_cli.py');
 const backendVenvPython = path.join(projectRoot, 'backend', 'venv', 'bin', 'python');
 const backendVenvPythonWin = path.join(projectRoot, 'backend', 'venv', 'Scripts', 'python.exe');
+const backendUvPython = path.join(projectRoot, 'backend', '.venv', 'bin', 'python');
+const backendUvPythonWin = path.join(projectRoot, 'backend', '.venv', 'Scripts', 'python.exe');
 const quizDataPath = path.join(projectRoot, 'backend', 'quiz_data.json');
 const adminCardsPath = path.join(projectRoot, 'backend', 'admin_cards.json');
 const quizLogDir = path.join(projectRoot, 'quiz_logs');
@@ -67,6 +69,10 @@ function resolvePythonPath() {
         pythonPath = backendVenvPython;
     } else if (fs.existsSync(backendVenvPythonWin)) {
         pythonPath = backendVenvPythonWin;
+    } else if (fs.existsSync(backendUvPython)) {
+        pythonPath = backendUvPython;
+    } else if (fs.existsSync(backendUvPythonWin)) {
+        pythonPath = backendUvPythonWin;
     }
     
     // キャッシュに保存
@@ -115,6 +121,13 @@ async function runNfcCli(args, inputText = null) {
         // タイムアウトの場合は明確なメッセージを返す
         if (error.killed) {
             return { ok: false, error: 'タイムアウト: カードが検知できませんでした' };
+        }
+        // CLIが正常に返した通信エラーは、そのメッセージを画面に渡す。
+        try {
+            const result = JSON.parse(error.stdout);
+            if (result.ok === false) return result;
+        } catch (_) {
+            // JSON応答がない異常終了は、従来のエラー情報を使用する。
         }
         console.error('NFC CLI Error:', error.message);
         return { ok: false, error: error.message };

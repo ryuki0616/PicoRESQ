@@ -46,6 +46,7 @@ only-include = [
     "main.py",
     "database.py",
     "nfc_reader.py",
+    "nfc_connection.py",
     "nfc_writer.py",
     "quiz_data.py",
     "quiz_data.json",

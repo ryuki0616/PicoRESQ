@@ -8,6 +8,8 @@ let isWriting = false; // 書き込み処理中フラグ
 let currentResidentData = null; // 現在表示中の避難者データ
 let currentCardIdm = null; // 現在検知中のカードIDm
 let pollIntervalId = null; // ポーリングのインターバルID
+let isPolling = false; // 読み取りが終わるまで次の検知を開始しない
+let needsReadRetry = false;
 const INPUT_LIMITS = {
     nameBytes: 24,
     allergyBytes: 21
@@ -99,9 +101,10 @@ function updateReaderStatus(message, isError = false) {
 
 async function pollCard() {
     // 書き込み中はポーリングをスキップ（カードリーダー競合防止）
-    if (isWriting) {
+    if (isWriting || isPolling) {
         return;
     }
+    isPolling = true;
     try {
         const api = getNfcApi();
         if (!api) {
@@ -113,10 +116,11 @@ async function pollCard() {
             return;
         }
         const idm = result.idm;
-        if (idm && idm !== lastDetectedIdm) {
+        if (idm && (idm !== lastDetectedIdm || needsReadRetry)) {
+            needsReadRetry = false;
             lastDetectedIdm = idm;
             updateReaderStatus(`✓ カード検知: ${idm}`);
-            handleNfcDetected(idm);
+            await handleNfcDetected(idm);
         } else if (!idm && lastDetectedIdm) {
             const prev = lastDetectedIdm;
             lastDetectedIdm = null;
@@ -127,6 +131,8 @@ async function pollCard() {
         }
     } catch (error) {
         updateReaderStatus(`✗ NFCリーダーエラー: ${error.message}`, true);
+    } finally {
+        isPolling = false;
     }
 }
 
@@ -198,7 +204,7 @@ function formatAllergyDisplay(data) {
     return allergy;
 }
 
-function handleNfcDetected(idm) {
+async function handleNfcDetected(idm) {
     console.log("NFC Detected:", idm);
     currentCardIdm = idm;
 
@@ -208,7 +214,7 @@ function handleNfcDetected(idm) {
         document.getElementById('read-result').style.display = 'block';
         document.getElementById('resident-info').innerHTML = `<p>IDm: ${idm}</p><p>読み込み中...</p>`;
         
-        fetchResidentInfo(idm);
+        await fetchResidentInfo(idm);
 
     } else if (currentMode === 'write' && isScanningForWrite) {
         // In write mode, proceed with registration
@@ -319,9 +325,19 @@ async function fetchResidentInfo(idm) {
         if (!result.ok) {
             throw new Error(result.error || 'カード読み取りに失敗しました');
         }
+        if (result.idm !== idm) {
+            throw new Error('カードが交換されました。再度読み取ってください');
+        }
 
         const data = result.reception || {};
-        currentResidentData = data;
+        // クイズと同じヘッダー由来の進捗を表示する。
+        currentResidentData = {
+            ...data,
+            idm: result.idm,
+            quiz_clearance_flags: result.clearance_flags.reduce(
+                (flags, cleared, index) => flags | (cleared ? 1 << index : 0), 0
+            )
+        };
 
         // デモ用：名前、配慮項目、アレルギーのみ表示
         let infoHtml = `
@@ -347,6 +363,8 @@ async function fetchResidentInfo(idm) {
     } catch (error) {
         console.error('Error fetching resident info:', error);
         currentResidentData = null;
+        // 同じカードを置いたままでも、次のポーリングで読み直す。
+        needsReadRetry = true;
         document.getElementById('resident-info').innerHTML = 
             `<p style="color: #f44336;">✗ 読み取りエラー: ${error.message}</p>`;
         document.getElementById('detail-button-container').style.display = 'none';

@@ -38,27 +38,29 @@ def _detect_uid() -> Optional[str]:
     """
     from smartcard.System import readers
     from smartcard.util import toHexString
-    from smartcard.Exceptions import NoCardException
+    from smartcard.Exceptions import NoCardException, CardConnectionException
+    _add_backend_to_syspath()
+    from nfc_connection import card_connection
+    from nfc_writer import _select_preferred_reader
 
     reader_list = readers()
     if not reader_list:
         return None
 
-    reader = reader_list[0]
-    connection = reader.createConnection()
-    try:
-        connection.connect()
-    except NoCardException:
-        return None
-
-    apdu = [0xFF, 0xCA, 0x00, 0x00, 0x00]
-    try:
-        response, sw1, sw2 = connection.transmit(apdu)
-        if sw1 == 0x90 and sw2 == 0x00:
-            return toHexString(response).replace(" ", "")
-        return None
-    except NoCardException:
-        return None
+    reader = _select_preferred_reader(reader_list)
+    for attempt in range(3):
+        try:
+            with card_connection(reader) as connection:
+                response, sw1, sw2 = connection.transmit([0xFF, 0xCA, 0x00, 0x00, 0x00])
+                if sw1 == 0x90 and sw2 == 0x00:
+                    return toHexString(response).replace(" ", "")
+                raise CardConnectionException("カードIDを読み取れませんでした")
+        except NoCardException:
+            return None
+        except CardConnectionException:
+            if attempt == 2:
+                raise
+            time.sleep(0.1)
 
 
 def _wait_for_uid(wait_seconds: float, poll_interval: float) -> Optional[str]:
@@ -106,23 +108,35 @@ def cmd_detect(args: argparse.Namespace) -> int:
 def cmd_read(args: argparse.Namespace) -> int:
     """カード内容を読み取る"""
     _add_backend_to_syspath()
-    from nfc_writer import read_reception_data, read_cleared_count, read_booth_clearance_flags  # type: ignore
+    from nfc_writer import read_reception_data, read_booth_clearance_flags  # type: ignore
 
     uid = _wait_for_uid(args.wait_seconds, args.poll_interval)
     if not uid:
         return _emit_error("カードが検知できません")
 
-    reception = read_reception_data(uid)
-    cleared_count = read_cleared_count(uid)
-    clearance_flags = read_booth_clearance_flags(uid)
-    # Noneの場合は空のリストにフォールバック
-    if clearance_flags is None:
-        clearance_flags = [False] * 5
+    # 通信失敗を空の登録情報や未クリアに置き換えない。
+    for attempt in range(3):
+        reception = read_reception_data(uid)
+        clearance_flags = read_booth_clearance_flags(uid)
+        if _detect_uid() != uid:
+            return _emit_error("カードが離れたか、別のカードに交換されました")
+        if reception is not None and clearance_flags is not None:
+            break
+        if attempt < 2:
+            time.sleep(0.2)
+    else:
+        return _emit_error("カード情報を読み取れませんでした。カードを置いたまま再試行してください")
+
+    # 両画面ともヘッダーのクリアフラグを正とし、旧データ領域の値は使わない。
+    reception["quiz_clearance_flags"] = sum(
+        1 << index for index, cleared in enumerate(clearance_flags) if cleared
+    )
+    cleared_count = sum(clearance_flags)
 
     return _emit_ok(
         {
             "idm": uid,
-            "reception": reception or {},
+            "reception": reception,
             "cleared_count": cleared_count,
             "clearance_flags": clearance_flags,
         }
@@ -257,7 +271,17 @@ def main() -> int:
     """エントリーポイント"""
     parser = build_parser()
     args = parser.parse_args()
-    return args.func(args)
+    _add_backend_to_syspath()
+    from nfc_connection import nfc_operation
+    from smartcard.Exceptions import CardConnectionException
+
+    try:
+        with nfc_operation():
+            return args.func(args)
+    except CardConnectionException:
+        return _emit_error("カードと通信できませんでした。カードを置いたまま再試行してください")
+    except TimeoutError as error:
+        return _emit_error(str(error))
 
 
 if __name__ == "__main__":

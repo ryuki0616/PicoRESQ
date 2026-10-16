@@ -50,6 +50,10 @@ if [ -z "$PICORESQ_PYTHON" ]; then
         export PICORESQ_PYTHON="$PROJECT_ROOT/backend/venv/bin/python"
     elif [ -x "$PROJECT_ROOT/backend/venv/Scripts/python.exe" ]; then
         export PICORESQ_PYTHON="$PROJECT_ROOT/backend/venv/Scripts/python.exe"
+    elif [ -x "$PROJECT_ROOT/backend/.venv/bin/python" ]; then
+        export PICORESQ_PYTHON="$PROJECT_ROOT/backend/.venv/bin/python"
+    elif [ -x "$PROJECT_ROOT/backend/.venv/Scripts/python.exe" ]; then
+        export PICORESQ_PYTHON="$PROJECT_ROOT/backend/.venv/Scripts/python.exe"
     fi
 fi
 if [ -n "$PICORESQ_PYTHON" ]; then
