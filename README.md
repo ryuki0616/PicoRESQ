@@ -37,6 +37,26 @@ python scripts/setup.py
 ```
 
 3. 起動
+
+Ubuntu/Linuxで受付・クイズをまとめて起動する場合:
+
+```bash
+./scripts/start_all.sh
+```
+
+Windowsでまとめて起動する場合:
+
+```bat
+scripts\start_all.bat
+```
+
+Windows版はPython 3.11以上を使用し、WindowsのJob Objectで子孫プロセスも管理します。
+Ctrl+C、または片方のアプリを閉じると、両方を終了します。
+このスクリプト自体の二重実行を防ぎます。個別起動済みのアプリは先に閉じてください。
+初回セットアップを済ませてから使用してください。
+
+個別に起動する場合:
+
 ```bash
 ./scripts/start_reception.sh   # macOS/Linux
 scripts\\start_reception.bat   # Windows
@@ -54,6 +74,9 @@ PicoRESQ/
 ├── rules.md               # コーディング規約
 ├── .gitignore             # Git除外設定
 ├── scripts/               # スクリプト
+│   ├── start_all.sh       # 受付・クイズの同時起動と終了 (Linux用)
+│   ├── start_all.bat      # 受付・クイズの同時起動 (Windows用)
+│   ├── start_all_windows.py # Windows用の二重起動防止・プロセス管理
 │   ├── setup.sh           # セットアップスクリプト (macOS/Linux用)
 │   ├── setup.bat          # セットアップスクリプト (Windows用)
 │   ├── setup.py           # セットアップスクリプト (Python版・クロスプラットフォーム)
@@ -302,6 +325,10 @@ python3 scripts/card_only.py write-cleared --count 2
 ## 起動の順序（オフライン）
 
 バックエンドは起動せず、**受付 → クイズ**の順で起動します（どちらからでも動きます）。
+
+Ubuntu/Linuxでは `./scripts/start_all.sh` で両方をまとめて起動できます。
+Windowsでは `scripts\start_all.bat` を使用してください。
+両画面は同じNFCリーダーを共有し、カード操作はCLIの排他制御で順番に実行します。
 
 ## 使い方
 

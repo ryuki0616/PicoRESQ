@@ -1,5 +1,6 @@
 @echo off
 REM PicoRESQ 受付システム - Electron起動スクリプト (Windows用)
+setlocal
 
 echo.
 echo ============================================================
@@ -36,7 +37,7 @@ where node >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
     echo [エラー] Node.jsがインストールされていません。
     echo Node.js LTS版をインストールしてください: https://nodejs.org/
-    pause
+    if not "%PICORESQ_COMBINED_START%"=="1" pause
     exit /b 1
 )
 
@@ -51,7 +52,7 @@ where npm >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
     echo [エラー] npmがインストールされていません。
     echo Node.jsと一緒にインストールされるはずです。Node.jsの再インストールを確認してください。
-    pause
+    if not "%PICORESQ_COMBINED_START%"=="1" pause
     exit /b 1
 )
 
@@ -63,13 +64,12 @@ if not exist "node_modules" (
     echo [警告] 依存関係が見つかりません。
     echo [情報] 依存関係をインストール中...
     call npm install
-    if %ERRORLEVEL% EQU 0 (
-        echo [成功] 依存関係のインストールが完了しました。
-    ) else (
+    if errorlevel 1 (
         echo [エラー] 依存関係のインストールに失敗しました。
-        pause
+        if not "%PICORESQ_COMBINED_START%"=="1" pause
         exit /b 1
     )
+    echo [成功] 依存関係のインストールが完了しました。
 ) else (
     echo [情報] 依存関係は既にインストールされています。
 )
@@ -80,5 +80,6 @@ echo [情報] 停止するにはアプリケーションを閉じてください
 echo.
 
 call npm start
-
-pause
+set "APP_EXIT_CODE=%ERRORLEVEL%"
+if not "%PICORESQ_COMBINED_START%"=="1" pause
+exit /b %APP_EXIT_CODE%
